@@ -348,7 +348,7 @@ function renderAll(){
  document.getElementById('weekWT').textContent=weekWalks.length;
  document.getElementById('weekMeet').textContent=weekMeetings.length;
  document.getElementById('weekGroupMeet').textContent=weekGroups.length+'/'+db.groupTarget;
- document.getElementById('weekTasks').textContent=db.tasks.filter(x=>x.done).length;
+ const weekTasksEl=document.getElementById('weekTasks'); if(weekTasksEl) weekTasksEl.textContent=db.tasks.filter(x=>x.done).length;
  document.getElementById('weekFollow').textContent=db.meetings.filter(x=>x.follow && x.follow>=dateKey()).length;
  document.getElementById('weeklyNotes').value=db.notes||'';
  document.getElementById('groupTarget').value=String(db.groupTarget);
