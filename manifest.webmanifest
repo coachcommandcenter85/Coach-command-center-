@@ -1,0 +1,9 @@
+{
+  "name": "Coach Command Center",
+  "short_name": "Coach Center",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#6878f5",
+  "icons": []
+}

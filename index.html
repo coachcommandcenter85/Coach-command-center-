@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Daily Dashboard</title>
+<style>
+:root{
+  --bg:#f6f7fb; --card:#fff; --ink:#253044; --muted:#6d7482;
+  --accent:#6b7cff; --accent2:#8b7cf6; --line:#e7e9f0; --good:#43a979;
+  --warn:#e7a23b; --danger:#d95d6a;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#6878f5,#8d79ef);color:white;padding:24px 18px 28px;border-radius:0 0 24px 24px}
+.header-row{max-width:1100px;margin:auto;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+h1{margin:0 0 5px;font-size:28px}.sub{opacity:.9;font-size:14px}
+.container{max-width:1100px;margin:-12px auto 40px;padding:0 14px}
+.tabs{display:flex;gap:7px;overflow:auto;padding:10px 0}
+.tab{border:0;background:white;color:var(--muted);padding:10px 14px;border-radius:12px;white-space:nowrap;font-weight:600;box-shadow:0 2px 8px #1720330d;cursor:pointer}
+.tab.active{background:var(--ink);color:white}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 3px 15px #17203308}
+.span-12{grid-column:span 12}.span-8{grid-column:span 8}.span-6{grid-column:span 6}.span-4{grid-column:span 4}
+.card h2{font-size:17px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:14px;border-radius:14px;background:#f7f7fb}.stat b{font-size:24px;display:block}.stat span{font-size:12px;color:var(--muted)}
+button.primary{background:var(--accent);color:white;border:0;border-radius:11px;padding:10px 14px;font-weight:700;cursor:pointer}
+button.secondary,.smallbtn{background:#f0f1f7;border:0;border-radius:9px;padding:8px 10px;color:var(--ink);cursor:pointer;font-weight:600}
+button.danger{background:#fff0f1;color:var(--danger);border:0;border-radius:9px;padding:8px 10px;cursor:pointer}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;font:inherit;background:white;color:var(--ink)}
+textarea{min-height:90px;resize:vertical}
+label{font-size:12px;font-weight:700;color:var(--muted);display:block;margin:10px 0 5px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.full{grid-column:1/-1}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.check{display:flex;align-items:center;gap:9px}.check input{width:auto}
+.badge{font-size:11px;padding:5px 8px;border-radius:20px;background:#eef0ff;color:#5968df;font-weight:700}
+.todo{display:flex;gap:10px;align-items:center;padding:9px 0}.todo input{width:auto}
+.completed{text-decoration:line-through;color:#9aa0ac}
+.empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+.modal{position:fixed;inset:0;background:#11182780;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modal.show{display:flex}.modalbox{background:white;border-radius:20px;padding:20px;max-width:620px;width:100%;max-height:90vh;overflow:auto}
+.modalhead{display:flex;justify-content:space-between;align-items:center}.close{border:0;background:#f0f1f7;border-radius:50%;width:34px;height:34px;cursor:pointer}
+.section{display:none}.section.active{display:block}
+.notice{padding:11px 13px;background:#f1f3ff;border-radius:12px;font-size:13px;margin-bottom:12px}
+@media(max-width:760px){
+ .span-8,.span-6,.span-4{grid-column:span 12}
+ .stats{grid-template-columns:repeat(2,1fr)}
+ .form-grid{grid-template-columns:1fr}
+ .header-row{display:block}
+}
+</style>
+</head>
+<body>
+<header>
+ <div class="header-row">
+  <div><h1>🫶🏽 Coach Daily Dashboard</h1><div class="sub">Your coaching day, all in one place.</div></div>
+  <div style="text-align:right"><div id="todayText"></div><div id="dayType" style="font-weight:800;margin-top:5px"></div></div>
+ </div>
+</header>
+<div class="container">
+ <div class="tabs">
+  <button class="tab active" onclick="showTab('today',this)">🏠 Today</button>
+  <button class="tab" onclick="showTab('teachers',this)">👩🏽‍🏫 Teachers</button>
+  <button class="tab" onclick="showTab('walkthroughs',this)">🚶🏽 Walk-Throughs</button>
+  <button class="tab" onclick="showTab('meetings',this)">🤝 Meetings</button>
+  <button class="tab" onclick="showTab('tasks',this)">✅ Tasks</button>
+  <button class="tab" onclick="showTab('weekly',this)">📊 Weekly</button>
+  <button class="tab" onclick="showTab('data',this)">📈 Data</button>
+  <button class="tab" onclick="showTab('closeout',this)">🌙 Closeout</button>
+ </div>
+
+ <section id="today" class="section active">
+  <div class="card span-12" style="margin-bottom:14px">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div><h2 style="margin-bottom:3px">🧠 Today’s Coaching Brain</h2><div class="muted">Your planning-period coaching roster at a glance.</div></div>
+    <select id="todayDay" onchange="renderTodayBrain()" style="width:auto"><option>A Day</option><option>B Day</option></select>
+   </div>
+   <div id="todayBrain" style="margin-top:12px"></div>
+  </div>
+  <div class="grid">
+   <div class="card span-12">
+    <div class="stats">
+     <div class="stat"><b id="statWT">0</b><span>Walk-throughs</span></div>
+     <div class="stat"><b id="statMeet">0</b><span>Meetings</span></div>
+     <div class="stat"><b id="statTasks">0</b><span>Open tasks</span></div>
+     <div class="stat"><b id="statFollow">0</b><span>Follow-ups</span></div>
+    </div>
+   </div>
+   <div class="card span-8">
+    <h2>🔥 Today's Priorities</h2>
+    <div id="priorities"></div>
+    <div class="actions" style="margin-top:12px"><button class="primary" onclick="openTask()">＋ Add task</button></div>
+   </div>
+   <div class="card span-4">
+    <h2>⚡ Quick Add</h2>
+    <div class="actions">
+     <button class="secondary" onclick="openWalk()">🚶 Walk-through</button>
+     <button class="secondary" onclick="openMeeting()">🤝 Meeting</button>
+     <button class="secondary" onclick="openNote()">📝 Note</button>
+     <button class="secondary" onclick="showFocus20()">⏱️ I Have 20 Minutes</button>
+    </div>
+   </div>
+   <div class="card span-6">
+    <h2>⏰ Today's Coaching Rhythm</h2>
+    <div class="notice">Use this as your running agenda. Add your exact school bell schedule when you're ready.</div>
+    <div class="row"><b>7:30–8:00</b><span class="muted">Office / daily setup</span></div>
+    <div class="row"><b>Morning</b><span class="muted">Walk-throughs + teacher support</span></div>
+    <div class="row"><b>Planning periods</b><span class="muted">Coaching meetings / feedback</span></div>
+    <div class="row"><b>Afternoon</b><span class="muted">Data, follow-ups, copies</span></div>
+    <div class="row"><b>3:00–3:30</b><span class="muted">Close-out + tomorrow prep</span></div>
+   </div>
+   <div class="card span-6">
+    <h2>📌 Coaching Desk Checklist</h2>
+    <div id="deskChecklist"></div>
+   </div>
+  </div>
+ </section>
+
+ <section id="teachers" class="section">
+  <div class="card">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h2>👩🏽‍🏫 Teacher Tracker</h2><div class="muted">Keep the whole coaching caseload visible.</div></div><button class="primary" onclick="openTeacher()">＋ Add teacher</button></div>
+   <div class="notice">⭐ Your A-Day coaching roster is preloaded. Planning periods marked TBD can be updated anytime.</div>
+   <div id="teacherList" style="margin-top:10px"></div>
+  </div>
+ </section>
+
+ <section id="walkthroughs" class="section">
+  <div class="card">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div><h2>🚶🏽 Walk-Through Log</h2><div class="muted">Capture evidence quickly while you're in the classroom.</div></div><button class="primary" onclick="openWalk()">＋ New walk-through</button></div>
+   <div id="walkList"></div>
+  </div>
+ </section>
+
+ <section id="meetings" class="section">
+  <div class="grid">
+   <div class="card span-12">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+     <div><h2>🤝 Coaching Meetings</h2><div class="muted">Individual coaching + your new 2–3 group coaching meetings each week.</div></div>
+     <div class="actions"><button class="secondary" onclick="openGroupMeeting()">👥 Group meeting</button><button class="primary" onclick="openMeeting()">＋ Individual meeting</button></div>
+    </div>
+   </div>
+   <div class="card span-4">
+    <h2>🎯 Weekly Group Coaching</h2>
+    <div class="muted">Target: 2–3 groups per week</div>
+    <div style="display:flex;align-items:end;gap:10px;margin-top:10px">
+     <div><label>Weekly target</label><select id="groupTarget" onchange="setGroupTarget()" style="width:auto"><option value="2">2 groups</option><option value="3">3 groups</option></select></div>
+     <div style="font-size:28px;font-weight:800"><span id="groupWeekCount">0</span>/<span id="groupWeekTarget">3</span></div>
+    </div>
+    <div id="groupProgress" class="notice" style="margin-top:10px"></div>
+   </div>
+   <div class="card span-8">
+    <h2>👥 Group Meeting Templates</h2>
+    <div class="actions">
+     <button class="smallbtn" onclick="openGroupMeeting('Middle School Math')">Middle School Math</button>
+     <button class="smallbtn" onclick="openGroupMeeting('Middle School Science')">Middle School Science</button>
+     <button class="smallbtn" onclick="openGroupMeeting('High School Math')">High School Math</button>
+     <button class="smallbtn" onclick="openGroupMeeting('High School Science')">High School Science</button>
+    </div>
+   </div>
+   <div class="card span-12">
+    <h2>📅 Meeting Log</h2>
+    <div id="meetingList"></div>
+   </div>
+  </div>
+ </section>
+
+ <section id="tasks" class="section">
+  <div class="card">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div><h2>✅ Tasks & Follow-Ups</h2><div class="muted">Anything unfinished stays visible.</div></div><button class="primary" onclick="openTask()">＋ New task</button></div>
+   <div id="taskList"></div>
+  </div>
+ </section>
+
+ <section id="weekly" class="section">
+  <div class="grid">
+   <div class="card span-12"><h2>📊 Weekly Coaching Snapshot</h2><div class="stats">
+    <div class="stat"><b id="weekWT">0</b><span>Walk-throughs this week</span></div>
+    <div class="stat"><b id="weekMeet">0</b><span>Meetings this week</span></div>
+    <div class="stat"><b id="weekGroupMeet">0/3</b><span>Group meetings this week</span></div>
+    <div class="stat"><b id="weekFollow">0</b><span>Open follow-ups</span></div>
+   </div></div>
+   <div class="card span-6"><h2>👥 Weekly Group Coaching — 2–3 Groups/Week</h2><div class="notice">Keep your group coaching rhythm separate from bi-weekly student assessments.</div><div id="weeklyGroupList" style="margin-top:8px"></div></div>
+   <div class="card span-6"><h2>📝 Weekly Notes</h2><textarea id="weeklyNotes" placeholder="Wins, trends, concerns, next steps..."></textarea><button class="primary" style="margin-top:10px" onclick="saveWeeklyNotes()">Save notes</button></div>
+   <div class="card span-12"><h2>📌 Weekly Priorities</h2><div class="todo"><input type="checkbox"> Complete 2–3 group coaching meetings</div><div class="todo"><input type="checkbox"> Review bi-weekly assessments</div><div class="todo"><input type="checkbox"> Check gradebooks</div><div class="todo"><input type="checkbox"> Review lesson plans</div><div class="todo"><input type="checkbox"> Send team reminder</div><div class="todo"><input type="checkbox"> Schedule follow-ups</div></div>
+  </div>
+ </section>
+
+<section id="data" class="section">
+ <div class="grid">
+  <div class="card span-12">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div><h2>📈 Coaching Data & Benchmark Tracker</h2><div class="muted">Connect teacher coaching to student data and next instructional steps.</div></div><button class="primary" onclick="openData()">＋ Add data point</button></div>
+   <div id="dataList"></div>
+  </div>
+ </div>
+</section>
+
+<section id="closeout" class="section">
+ <div class="grid">
+  <div class="card span-8">
+   <h2>🌙 Daily Closeout</h2>
+   <div class="notice">Take 2 minutes before you leave. Tomorrow-you will be very grateful. 😂</div>
+   <div id="closeoutChecks"></div>
+   <label>Tomorrow's Top 3</label>
+   <textarea id="tomorrowTop3" placeholder="1.&#10;2.&#10;3."></textarea>
+   <label>Anything I need to remember?</label>
+   <textarea id="closeoutNotes" placeholder="Follow-ups, admin reminders, teacher needs..."></textarea>
+   <button class="primary" style="margin-top:10px" onclick="saveCloseout()">Save closeout</button>
+  </div>
+  <div class="card span-4">
+   <h2>📋 Admin Snapshot</h2>
+   <div id="adminSnapshot"></div>
+  </div>
+ </div>
+</section>
+
+</div>
+
+<div class="modal" id="modal"><div class="modalbox"><div class="modalhead"><h2 id="modalTitle">Add</h2><button class="close" onclick="closeModal()">×</button></div><div id="modalBody"></div></div></div>
+
+<script>
+const KEY='coachDashboardV1';
+const STARTER_TEACHERS=[
+ {name:'Ms Garcia',subject:'Math — 8th Grade',period:'2nd',day:'A Day'},
+ {name:'Ms Fontan',subject:'Math — 6th Grade Intensive Math',period:'TBD',day:'A Day'},
+ {name:'Ms Rosario',subject:'Math — 6th Grade',period:'2nd',day:'A Day'},
+ {name:'Mr Butler',subject:'Math — 7th Grade',period:'2nd',day:'A Day'},
+ {name:'Mr Rodriguez',subject:'Science — 6th Grade',period:'3rd',day:'A Day'},
+ {name:'Ms Ordaz',subject:'Science — 8th Grade',period:'3rd',day:'A Day'},
+ {name:'Ms Beneby',subject:'Science — 7th Grade',period:'3rd',day:'A Day'},
+ {name:'Mr Ramos',subject:'High School Science',period:'3rd',day:'A Day'},
+ {name:'Ms Roye',subject:'High School Math',period:'6th',day:'A Day'},
+ {name:'Mr Parashar',subject:'High School Math',period:'6th',day:'A Day'},
+ {name:'Mr Pacot',subject:'High School Math',period:'6th',day:'A Day'},
+ {name:'Ms Matto',subject:'High School Math',period:'TBD',day:'A Day'},
+ {name:'Ms Labadan',subject:'High School Science',period:'7th',day:'A Day'},
+ {name:'Ms Rios',subject:'High School Science',period:'7th',day:'A Day'}
+];
+let db=JSON.parse(localStorage.getItem(KEY)||'{"teachers":[],"walks":[],"meetings":[],"tasks":[],"notes":"","data":[],"closeout":{}}');
+db.data=db.data||[]; db.closeout=db.closeout||{}; db.groupTarget=db.groupTarget||3; db.meetings=db.meetings||[];
+db.teachers.forEach(t=>{if(!t.status)t.status='On Track';});
+if(!db.teachers || db.teachers.length===0){
+  db.teachers=STARTER_TEACHERS.map((t,i)=>({...t,id:Date.now()+i,status:'On Track'}));
+  localStorage.setItem(KEY,JSON.stringify(db));
+}
+const today=new Date();
+const dateKey=()=>today.toISOString().slice(0,10);
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function esc(s=''){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function showTab(id,btn){document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderAll()}
+function modal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function teacherOptions(){return '<option value="">Select teacher</option>'+db.teachers.map(t=>`<option>${esc(t.name)}</option>`).join('')}
+function openTeacher(){
+ modal('Add Teacher',`<div class="form-grid"><div class="full"><label>Teacher name</label><input id="f1"></div><div><label>Department / subject</label><input id="f2" placeholder="Math, ELA, Science..."></div><div><label>Planning period</label><select id="f3"><option>2nd</option><option>3rd</option><option>6th</option><option>7th</option><option>TBD</option></select></div><div><label>Schedule</label><select id="f4"><option>A Day</option><option>B Day</option><option>A/B</option></select></div></div><button class="primary" style="margin-top:14px" onclick="addTeacher()">Save teacher</button>`);
+}
+function addTeacher(){let name=f('f1');if(!name)return alert('Add a teacher name.');db.teachers.push({id:Date.now(),name,subject:f('f2'),period:f('f3'),day:f('f4')});closeModal();save()}
+function f(id){return document.getElementById(id)?.value.trim()||''}
+function openWalk(){
+ modal('New Walk-Through',`<div class="form-grid"><div><label>Teacher</label><select id="f1">${teacherOptions()}</select></div><div><label>Date</label><input id="f2" type="date" value="${dateKey()}"></div><div class="full"><label>Look-for / focus</label><input id="f3" placeholder="e.g., student grouping, questioning, rigor"></div><div class="full"><label>Student / classroom evidence</label><textarea id="f4"></textarea></div><div class="full"><label>Strength</label><textarea id="f5"></textarea></div><div class="full"><label>Next step / area for growth</label><textarea id="f6"></textarea></div></div><button class="primary" style="margin-top:14px" onclick="addWalk()">Save walk-through</button>`);
+}
+function addWalk(){db.walks.unshift({id:Date.now(),teacher:f('f1')||'Unassigned',date:f('f2'),focus:f('f3'),evidence:f('f4'),strength:f('f5'),next:f('f6')});closeModal();save()}
+const GROUPS={
+ 'Middle School Math':['Ms Garcia','Ms Fontan','Ms Rosario','Mr Butler'],
+ 'Middle School Science':['Mr Rodriguez','Ms Ordaz','Ms Beneby','Mr Ramos'],
+ 'High School Math':['Ms Roye','Mr Parashar','Mr Pacot','Ms Matto'],
+ 'High School Science':['Ms Labadan','Ms Rios']
+};
+function weekStartKey(d=dateKey()){
+ const x=new Date(d+'T12:00:00'); const day=x.getDay(); const diff=day===0?-6:1-day; x.setDate(x.getDate()+diff); return x.toISOString().slice(0,10);
+}
+function inThisWeek(d){return d>=weekStartKey() && d<=dateKey();}
+function groupMeetingsThisWeek(){return db.meetings.filter(m=>m.type==='group'&&inThisWeek(m.date));}
+function setGroupTarget(){db.groupTarget=Number(document.getElementById('groupTarget').value)||3;save();}
+function openMeeting(){
+ modal('New Individual Coaching Meeting',`<div class="form-grid"><div><label>Teacher</label><select id="f1">${teacherOptions()}</select></div><div><label>Date</label><input id="f2" type="date" value="${dateKey()}"></div><div><label>Planning period</label><select id="f3"><option>2nd</option><option>3rd</option><option>6th</option><option>7th</option><option>Other</option></select></div><div><label>Day</label><select id="f4"><option>A Day</option><option>B Day</option><option>A/B</option></select></div><div class="full"><label>Coaching topic</label><input id="f5"></div><div><label>Teacher action step</label><textarea id="f6"></textarea></div><div><label>Coach action step</label><textarea id="f7"></textarea></div><div class="full"><label>Follow-up date</label><input id="f8" type="date"></div></div><button class="primary" style="margin-top:14px" onclick="addMeeting()">Save meeting</button>`);
+}
+function addMeeting(){db.meetings.unshift({id:Date.now(),type:'individual',teacher:f('f1')||'Unassigned',date:f('f2'),period:f('f3'),day:f('f4'),topic:f('f5'),teacherStep:f('f6'),coachStep:f('f7'),follow:f('f8')});closeModal();save()}
+function groupOptions(selected=''){return Object.keys(GROUPS).map(g=>`<option ${g===selected?'selected':''}>${g}</option>`).join('')}
+function groupMemberNames(group){return (GROUPS[group]||[]).join(', ')}
+function openGroupMeeting(group='Middle School Math'){
+ modal('New Group Coaching Meeting',`<div class="form-grid"><div><label>Group</label><select id="f1" onchange="updateGroupMembers()">${groupOptions(group)}</select></div><div><label>Date</label><input id="f2" type="date" value="${dateKey()}"></div><div><label>Planning period</label><select id="f3"><option>2nd</option><option>3rd</option><option>6th</option><option>7th</option><option>Other</option></select></div><div><label>Day</label><select id="f4"><option>A Day</option><option>B Day</option><option>A/B</option></select></div><div class="full"><label>Teachers in group</label><div id="groupMembers" class="notice">${esc(groupMemberNames(group))}</div></div><div class="full"><label>Meeting focus</label><div class="actions"><label class="check"><input type="checkbox" name="focus" value="Lesson planning"> Lesson planning</label><label class="check"><input type="checkbox" name="focus" value="Student data"> Student data</label><label class="check"><input type="checkbox" name="focus" value="Bi-weekly assessment"> Bi-weekly assessment</label><label class="check"><input type="checkbox" name="focus" value="Benchmark prep"> Benchmark prep</label><label class="check"><input type="checkbox" name="focus" value="Intervention"> Intervention</label><label class="check"><input type="checkbox" name="focus" value="Instructional strategy"> Instructional strategy</label></div></div><div class="full"><label>Agenda / discussion notes</label><textarea id="f5"></textarea></div><div><label>Team action steps</label><textarea id="f6"></textarea></div><div><label>Coach follow-up</label><textarea id="f7"></textarea></div><div class="full"><label>Next meeting date</label><input id="f8" type="date"></div></div><button class="primary" style="margin-top:14px" onclick="addGroupMeeting()">Save group meeting</button>`);
+}
+function updateGroupMembers(){const g=f('f1');const el=document.getElementById('groupMembers');if(el)el.textContent=groupMemberNames(g)}
+function addGroupMeeting(){const group=f('f1');const focuses=[...document.querySelectorAll('input[name="focus"]:checked')].map(x=>x.value);db.meetings.unshift({id:Date.now(),type:'group',group,teachers:[...(GROUPS[group]||[])],date:f('f2'),period:f('f3'),day:f('f4'),focus:focuses,topic:focuses.join(', '),notes:f('f5'),teamStep:f('f6'),coachStep:f('f7'),follow:f('f8')});closeModal();save()}
+function openTask(){
+ modal('New Task',`<label>Task</label><input id="f1" placeholder="e.g., Check benchmark tracker for Grade 8 Math"><div class="form-grid"><div><label>Due date</label><input id="f2" type="date" value="${dateKey()}"></div><div><label>Priority</label><select id="f3"><option>High</option><option>Normal</option><option>Low</option></select></div></div><button class="primary" style="margin-top:14px" onclick="addTask()">Save task</button>`);
+}
+function addTask(){let task=f('f1');if(!task)return alert('Add a task.');db.tasks.unshift({id:Date.now(),task,date:f('f2'),priority:f('f3'),done:false});closeModal();save()}
+function openNote(){modal('Quick Note',`<label>Note</label><textarea id="f1" placeholder="Type your coaching note..."></textarea><button class="primary" style="margin-top:14px" onclick="saveQuickNote()">Save note</button>`)}
+function saveQuickNote(){db.tasks.unshift({id:Date.now(),task:'NOTE: '+f('f1'),date:dateKey(),priority:'Normal',done:false});closeModal();save()}
+function toggleTask(id){let t=db.tasks.find(x=>x.id===id);t.done=!t.done;save()}
+function del(type,id){db[type]=db[type].filter(x=>x.id!==id);save()}
+
+function setStatus(id,status){let t=db.teachers.find(x=>x.id===id);if(t){t.status=status;save()}}
+function renderTodayBrain(){
+ const day=document.getElementById('todayDay')?.value||'A Day';
+ const periods=['2nd','3rd','4th','6th','7th','8th','TBD'];
+ const teachers=db.teachers.filter(t=>t.day===day);
+ const groups=periods.map(p=>[p,teachers.filter(t=>t.period===p)]).filter(x=>x[1].length);
+ document.getElementById('todayBrain').innerHTML=groups.length?groups.map(([p,ts])=>`
+  <div style="margin-bottom:12px"><div class="badge">${p} PERIOD</div>
+   <div class="grid" style="margin-top:7px">${ts.map(t=>`
+    <div class="card span-4" style="padding:12px">
+     <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(t.name)}</b><span class="badge">${esc(t.status||'On Track')}</span></div>
+     <div class="muted" style="margin:4px 0 9px">${esc(t.subject||'')}</div>
+     <div class="actions">
+      <button class="smallbtn" onclick="openWalkFor('${esc(t.name)}')">🚶 Walk</button>
+      <button class="smallbtn" onclick="openMeetingFor('${esc(t.name)}')">🤝 Meet</button>
+     </div>
+    </div>`).join('')}</div></div>`).join(''):'<div class="empty">No teachers are assigned to this day yet.</div>';
+}
+function openWalkFor(name){openWalk();setTimeout(()=>{let x=document.getElementById('f1');if(x)x.value=name},20)}
+function openMeetingFor(name){openMeeting();setTimeout(()=>{let x=document.getElementById('f1');if(x)x.value=name},20)}
+function showFocus20(){
+ const open=db.tasks.filter(t=>!t.done).slice(0,4);
+ modal('⏱️ Best Use of 20 Minutes', open.length?`<div class="notice">Based on your open tasks, here are your next best moves:</div>${open.map((t,i)=>`<div class="row"><div><b>${i+1}. ${esc(t.task)}</b><div class="muted">${esc(t.priority)} priority · due ${esc(t.date||'')}</div></div></div>`).join('')}`:'<div class="empty">You have no open tasks. Enjoy the rare moment. 😌</div>');
+}
+function openData(){
+ modal('Add Coaching/Data Point',`<div class="form-grid"><div><label>Teacher</label><select id="f1">${teacherOptions()}</select></div><div><label>Date</label><input id="f2" type="date" value="${dateKey()}"></div><div><label>Course / Grade</label><input id="f3"></div><div><label>Benchmark / Standard</label><input id="f4"></div><div><label>Student group / count</label><input id="f5" placeholder="e.g., 12 below target"></div><div><label>Current status</label><select id="f6"><option>Below Target</option><option>Approaching</option><option>On Target</option><option>Above Target</option></select></div><div class="full"><label>Instructional action / intervention</label><textarea id="f7"></textarea></div><div class="full"><label>Next check / reassessment</label><input id="f8"></div></div><button class="primary" style="margin-top:14px" onclick="addData()">Save data point</button>`);
+}
+function addData(){db.data.unshift({id:Date.now(),teacher:f('f1')||'Unassigned',date:f('f2'),course:f('f3'),benchmark:f('f4'),group:f('f5'),status:f('f6'),action:f('f7'),next:f('f8')});closeModal();save()}
+function saveCloseout(){
+ db.closeout={date:dateKey(),top3:document.getElementById('tomorrowTop3').value,notes:document.getElementById('closeoutNotes').value};
+ closeModal(); save(); alert('Closeout saved!');}
+function renderCloseout(){
+ const checks=['Completed today’s walk-throughs','Completed today’s teacher meetings','Documented feedback','Completed urgent follow-ups','Set tomorrow’s priorities'];
+ document.getElementById('closeoutChecks').innerHTML=checks.map(x=>`<div class="todo"><input type="checkbox"><span>${x}</span></div>`).join('');
+ document.getElementById('tomorrowTop3').value=db.closeout.top3||'';
+ document.getElementById('closeoutNotes').value=db.closeout.notes||'';
+ document.getElementById('adminSnapshot').innerHTML=`<div class="row"><b>Walk-throughs</b><span>${db.walks.length}</span></div><div class="row"><b>Meetings</b><span>${db.meetings.length}</span></div><div class="row"><b>Tasks completed</b><span>${db.tasks.filter(x=>x.done).length}</span></div><div class="row"><b>Open follow-ups</b><span>${db.meetings.filter(x=>x.follow&&x.follow>=dateKey()).length}</span></div>`;
+}
+function renderAll(){
+ const fmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}):'—';
+ document.getElementById('todayText').textContent=today.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+ document.getElementById('dayType').textContent='A / B Day: tap below when we customize your school calendar';
+ document.getElementById('statWT').textContent=db.walks.filter(x=>x.date===dateKey()).length;
+ document.getElementById('statMeet').textContent=db.meetings.filter(x=>x.date===dateKey()).length;
+ document.getElementById('statTasks').textContent=db.tasks.filter(x=>!x.done).length;
+ document.getElementById('statFollow').textContent=db.meetings.filter(x=>x.follow && x.follow>=dateKey()).length;
+ const weekWalks=db.walks.filter(x=>inThisWeek(x.date));
+ const weekMeetings=db.meetings.filter(x=>inThisWeek(x.date));
+ const weekGroups=groupMeetingsThisWeek();
+ document.getElementById('weekWT').textContent=weekWalks.length;
+ document.getElementById('weekMeet').textContent=weekMeetings.length;
+ document.getElementById('weekGroupMeet').textContent=weekGroups.length+'/'+db.groupTarget;
+ document.getElementById('weekTasks').textContent=db.tasks.filter(x=>x.done).length;
+ document.getElementById('weekFollow').textContent=db.meetings.filter(x=>x.follow && x.follow>=dateKey()).length;
+ document.getElementById('weeklyNotes').value=db.notes||'';
+ document.getElementById('groupTarget').value=String(db.groupTarget);
+ const gcount=groupMeetingsThisWeek().length, gt=db.groupTarget; document.getElementById('groupWeekCount').textContent=gcount; document.getElementById('groupWeekTarget').textContent=gt; document.getElementById('groupProgress').textContent=gcount>=gt?'🎉 Weekly target met!':`You have ${Math.max(gt-gcount,0)} group meeting${Math.max(gt-gcount,0)===1?'':'s'} left to reach your target.`; document.getElementById('weeklyGroupList').innerHTML=groupMeetingsThisWeek().map(m=>`<div class="row"><div><b>👥 ${esc(m.group)}</b><div class="muted">${fmt(m.date)} · ${esc(m.period)}</div></div></div>`).join('')||'<div class="empty">No group meetings logged yet this week.</div>';
+ document.getElementById('priorities').innerHTML=db.tasks.filter(x=>!x.done).slice(0,6).map(t=>`<div class="todo"><input type="checkbox" onchange="toggleTask(${t.id})"><span><b>${esc(t.task)}</b><small class="muted"> · ${fmt(t.date)} · ${esc(t.priority)}</small></span></div>`).join('')||'<div class="empty">No open priorities. Look at you. 😌</div>';
+ const desk=['Lesson plans','Copies','Gradebooks','Walk-through follow-ups','Bi-weekly assessments','Team message'];
+ document.getElementById('deskChecklist').innerHTML=desk.map(x=>`<div class="todo"><input type="checkbox"><span>${x}</span></div>`).join('');
+ document.getElementById('teacherList').innerHTML=db.teachers.map(t=>`<div class="row"><div><b>${esc(t.name)}</b><div class="muted">${esc(t.subject||'')} · Planning ${esc(t.period)} · ${esc(t.day)}</div><div style="margin-top:6px"><select onchange="setStatus(${t.id},this.value)" style="width:auto"><option ${t.status==='On Track'?'selected':''}>On Track</option><option ${t.status==='Needs Support'?'selected':''}>Needs Support</option><option ${t.status==='Priority Follow-Up'?'selected':''}>Priority Follow-Up</option></select></div></div><button class="danger" onclick="del('teachers',${t.id})">Remove</button></div>`).join('')||'<div class="empty">Add your coaching teachers here.</div>';
+ document.getElementById('walkList').innerHTML=db.walks.map(w=>`<div class="row"><div><b>${esc(w.teacher)}</b><div class="muted">${fmt(w.date)} · ${esc(w.focus||'No focus entered')}</div><div style="margin-top:5px;font-size:13px">${esc(w.next||w.evidence||'')}</div></div><button class="danger" onclick="del('walks',${w.id})">Delete</button></div>`).join('')||'<div class="empty">No walk-throughs logged yet.</div>';
+ document.getElementById('meetingList').innerHTML=db.meetings.map(m=>m.type==='group'?`<div class="row"><div><b>👥 ${esc(m.group)}</b><div class="muted">${fmt(m.date)} · ${esc(m.period)} · ${esc(m.day||'')} · ${esc((m.focus||[]).join(', ')||'Group coaching')}</div><div style="margin-top:5px;font-size:13px">${esc((m.teachers||[]).join(', '))}</div>${m.follow?`<div class="badge" style="margin-top:5px">Next meeting / follow-up ${fmt(m.follow)}</div>`:''}</div><button class="danger" onclick="del('meetings',${m.id})">Delete</button></div>`:`<div class="row"><div><b>👤 ${esc(m.teacher)}</b><div class="muted">${fmt(m.date)} · ${esc(m.period)} · ${esc(m.topic||'')}</div>${m.follow?`<div class="badge" style="margin-top:5px">Follow-up ${fmt(m.follow)}</div>`:''}</div><button class="danger" onclick="del('meetings',${m.id})">Delete</button></div>`).join('')||'<div class="empty">No coaching meetings logged yet.</div>';
+ document.getElementById('taskList').innerHTML=db.tasks.map(t=>`<div class="row"><div class="check"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})"><span class="${t.done?'completed':''}"><b>${esc(t.task)}</b><div class="muted">${fmt(t.date)} · ${esc(t.priority)}</div></span></div><button class="danger" onclick="del('tasks',${t.id})">Delete</button></div>`).join('')||'<div class="empty">No tasks yet.</div>';
+ document.getElementById('dataList').innerHTML=db.data.map(d=>`<div class="row"><div><b>${esc(d.teacher)}</b><div class="muted">${fmt(d.date)} · ${esc(d.course)} · ${esc(d.benchmark)}</div><div style="margin-top:4px">${esc(d.group)} · <span class="badge">${esc(d.status)}</span></div><div class="muted" style="margin-top:4px">${esc(d.action)}</div></div><button class="danger" onclick="del('data',${d.id})">Delete</button></div>`).join('')||'<div class="empty">No data points logged yet.</div>';
+ renderTodayBrain(); renderCloseout();
+}
+function saveWeeklyNotes(){db.notes=document.getElementById('weeklyNotes').value;save();alert('Weekly notes saved!')}
+renderAll();
+</script>
+</body>
+</html>
